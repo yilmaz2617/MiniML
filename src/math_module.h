@@ -100,6 +100,24 @@ public:
         return r;
     }
 
+    Matrix col_mean() const {
+        Matrix r = col_sum();
+        for (size_t j = 0; j < cols; ++j) r(0, j) /= (double)rows;
+        return r;
+    }
+
+    Matrix col_var(const Matrix& mean) const {
+        assert(mean.rows == 1 && mean.cols == cols);
+        Matrix r(1, cols, 0.0);
+        for (size_t i = 0; i < rows; ++i)
+            for (size_t j = 0; j < cols; ++j) {
+                double d = (*this)(i, j) - mean(0, j);
+                r(0, j) += d * d;
+            }
+        for (size_t j = 0; j < cols; ++j) r(0, j) /= (double)rows;
+        return r;
+    }
+
     void xavier_init(size_t fan_in, size_t fan_out) {
         std::mt19937 gen(42);
         double limit = std::sqrt(6.0 / (fan_in + fan_out));
