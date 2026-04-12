@@ -2,6 +2,7 @@
 #include "src/neural_net.h"
 #include "src/data_module.h"
 #include "src/agent.h"
+#include "src/ollama_module.h"
 #include <iostream>
 
 using namespace miniml;
@@ -347,11 +348,22 @@ void demo_multiagent() {
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     std::cout << "============================================\n";
     std::cout << "  MiniML Framework v0.2\n";
     std::cout << "  Adam | BatchNorm | CNN | PER-DQN | MultiAgent\n";
     std::cout << "============================================\n";
+    // Argüman kontrolü: "agent" geçilirse sohbet moduna gir
+    bool agent_mode = false;
+    for (int i = 1; i < argc; ++i)
+        if (std::string(argv[i]) == "agent") agent_mode = true;
+
+    if (agent_mode) {
+        miniml::MiniMLAgent agent("llama3.2:1b");
+        agent.run();
+        return 0;
+    }
+
     demo_xor();
     demo_qlearning();
     demo_dqn();
