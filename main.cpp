@@ -359,7 +359,7 @@ int main(int argc, char* argv[]) {
         if (std::string(argv[i]) == "agent") agent_mode = true;
 
     if (agent_mode) {
-        miniml::MiniMLAgent agent("llama3.2:1b");
+        miniml::MiniMLAgent agent("qwen2.5:1.5b");
         agent.run();
         return 0;
     }

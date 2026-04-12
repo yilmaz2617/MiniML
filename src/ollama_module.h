@@ -38,7 +38,7 @@ public:
     std::string memory_file;         // kalıcı bellek dosyası
     bool verbose = false;
 
-    OllamaClient(const std::string& m = "llama3.2:1b",
+    OllamaClient(const std::string& m = "qwen2.5:1.5b",
                  const std::string& h = "localhost", int p = 11434)
         : model(m), host(h), port(p),
           memory_file("miniml_memory.json") {
@@ -96,6 +96,12 @@ public:
         // Sistem promptu (MiniML bilgisi + kişilik)
         std::string sys = system_prompt.empty() ? default_system_prompt() : system_prompt;
         messages.push_back({{"role","system"}, {"content", sys}});
+        // Reminder to stay on-topic
+        messages.push_back({{"role","system"}, {"content",
+            "KRITIK: Sadece MiniML C++ framework hakkında konuş. "
+            "TensorFlow, PyTorch, scikit-learn gibi dış kütüphanelere atıfta BULUNMA. "
+            "Kod örneklerini YALNIZCA MiniML API'si ile göster (miniml:: namespace)."
+        }});
 
         // Geçmiş (son 10 mesaj — bağlam penceresi)
         int start = std::max(0, (int)history.size() - 10);
@@ -169,23 +175,38 @@ private:
     std::string default_system_prompt() {
         return R"(Sen MiniML Framework'ün akıllı asistanısın.
 MiniML, saf C++ ile yazılmış, sıfır bağımlılıklı bir makine öğrenmesi kütüphanesidir.
+TensorFlow, PyTorch, Keras, scikit-learn gibi harici kütüphaneleri ASLA önerme veya kod gösterme.
+Tüm kod örnekleri miniml:: namespace kullanan gerçek MiniML C++ API'si olmalı.
 
-Yeteneklerin:
-- Dense katmanlar (SGD / Adam optimizer)
-- BatchNormalization, Conv2D, MaxPool2D
-- DQN, PER-DQN (Prioritized Experience Replay)
-- Multi-Agent GridWorld ortamı
-- Model kaydetme/yükleme (.bin)
+=== MiniML API ===
+NeuralNet net;
+net.add_layer(Layer(giriş_boyutu, çıkış_boyutu, "relu"));
+net.use_adam(0.001);
+net.train(X, y, epochs, batch_size);
 
-Başarılar:
-- XOR: %100 accuracy
+BatchNormLayer bn(boyut);
+bn.forward(x, true);  // eğitim modu
+
+Conv2DLayer conv(in_channels, out_channels, kernel_size);
+MaxPool2DLayer pool(kernel_size, stride);
+
+DQNAgent agent(num_states, num_actions);
+agent.remember(state, action, reward, next_state, done);
+agent.learn();
+
+PERDQNAgent per_agent(num_states, num_actions);
+
+MultiAgentGridWorld env(grid_boyutu, num_agents);
+
+=== Başarı Oranları ===
+- XOR: %100
 - Q-Learning: %99.7
 - DQN: %92.1
 - PER-DQN: %99.5
 - Multi-Agent: %89-93
 
 Türkçe veya İngilizce sorulara kısa, net, teknik cevaplar ver.
-Kod örneklerini C++ olarak göster.)";
+Gereksiz açıklama yapma — doğrudan kod ve sonuç ver.)";
     }
 };
 
@@ -198,7 +219,7 @@ public:
     OllamaClient llm;
     bool running = true;
 
-    MiniMLAgent(const std::string& model = "llama3.2:1b")
+    MiniMLAgent(const std::string& model = "qwen2.5:1.5b")
         : llm(model) {}
 
     // ── Başlatma kontrolü ───────────────────────
@@ -236,6 +257,7 @@ public:
         while (running) {
             printf("Sen: ");
             std::getline(std::cin, input);
+            if (std::cin.eof()) { printf("  [EOF — çıkılıyor]\n"); break; }
             if (input.empty()) continue;
 
             // Özel komutlar
